@@ -750,15 +750,21 @@ class WhoisUk(WhoisEntry):
         'creation_date':                  'Registered on:\s*(.+)',
         'expiration_date':                'Expiry date:\s*(.+)',
         'updated_date':                   'Last updated:\s*(.+)',
-
-        'name_servers':                   'Name servers:\s*(.+)',
     }
-
+    
+    ns_re = re.compile('Name servers:(?:\r\n\s*([^\r\n]+))+?\r\n\r\n')
+    
     def __init__(self, domain, text):
         if 'No match for ' in text:
             raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text, self.regex)
+        
+        ns_match = self.ns_re.search(text).group(0)
+        if 'No name servers listed' in ns_match:
+            self['name_servers'] = []
+        else:
+            self['name_servers'] = [i.strip() for i in ns_match.split('\r\n')[1:-1] if len(i) > 0]
 
 
 class WhoisFr(WhoisEntry):
